@@ -26,13 +26,15 @@
 
 namespace units {
 
+template<typename Rep = double>
 class quantity {
-  double value_;
+  Rep value_;
 
 public:
+  using rep = Rep;
   constexpr quantity() : value_(0) {}
   constexpr quantity(const quantity& q) = default; // : value_(q.value_) {};
-  constexpr explicit quantity(const double& v) : value_(v) {};
+  constexpr explicit quantity(const Rep& v) : value_(v) {};
 
   constexpr quantity& operator=(const quantity& other) {
     if (this != &other) {
@@ -41,7 +43,7 @@ public:
     return *this;
   };
 
-  [[nodiscard]] constexpr double count() const noexcept {
+  [[nodiscard]] constexpr Rep count() const noexcept {
     return value_;
   };
 
@@ -49,10 +51,10 @@ public:
     return quantity(0);
   };
   [[nodiscard]] static constexpr quantity min() {
-    return quantity(std::numeric_limits<double>::min());
+    return quantity(std::numeric_limits<Rep>::lowest());
   };
   [[nodiscard]] static constexpr quantity max() {
-    return quantity(std::numeric_limits<double>::max());
+    return quantity(std::numeric_limits<Rep>::max());
   };
 
   [[nodiscard]] constexpr quantity operator+() const {
@@ -70,49 +72,65 @@ public:
     value_ -= q.value_;
     return *this;
   }
-  constexpr quantity& operator*=(const double& v) {
+  constexpr quantity& operator*=(const Rep& v) {
     value_ *= v;
     return *this;
   }
-  constexpr quantity& operator/=(const double& v) {
+  constexpr quantity& operator/=(const Rep& v) {
     value_ /= v;
     return *this;
   }
 
-  [[nodiscard]] friend constexpr quantity operator+(const quantity& lhs, const quantity& rhs) {
-    return quantity(lhs.value_ + rhs.value_);
+  template <typename T2>
+  [[nodiscard]] friend constexpr auto operator+(const quantity<Rep>& lhs, const quantity<T2>& rhs) {
+    auto result = lhs.count() + rhs.count();
+    return quantity<decltype(result)>(result);
   }
-  [[nodiscard]] friend constexpr quantity operator-(const quantity& lhs, const quantity& rhs) {
-    return quantity(lhs.value_ - rhs.value_);
+  template <typename T2>
+  [[nodiscard]] friend constexpr auto operator-(const quantity<Rep>& lhs, const quantity<T2>& rhs) {
+    auto result = lhs.count() - rhs.count();
+    return quantity<decltype(result)>(result);
   }
-  [[nodiscard]] friend constexpr quantity operator*(const quantity& q, const double& v) {
-    return quantity{q} * v;
+  template <typename Rep1>
+  [[nodiscard]] friend constexpr auto operator*(const quantity<Rep>& q, const Rep1& v) {
+    auto result = q.count() * v;
+    return quantity<decltype(result)>(result);
   }
-  [[nodiscard]] friend constexpr quantity operator*(const double& v, const quantity& q) {
+  template <typename Rep1>
+  [[nodiscard]] friend constexpr auto operator*(const Rep1& v, const quantity<Rep>& q) {
     return  q * v;
   }
-  [[nodiscard]] friend constexpr quantity operator/(const quantity& q, const double& v) {
-    return quantity{q} / v;
+  template <typename Rep1>
+  [[nodiscard]] friend constexpr auto operator/(const quantity<Rep>& q, const Rep1& v) {
+    auto result = q.count() / v;
+    return quantity<decltype(result)>(result);
   }
-  [[nodiscard]] friend constexpr double operator/(const quantity& lhs, const quantity& rhs) {
-    return lhs / rhs;
+  template <typename T2>
+  [[nodiscard]] friend constexpr auto operator/(const quantity<Rep>& lhs, const quantity<T2>& rhs) {
+    return lhs.count() / rhs.count();
   }
-  [[nodiscard]] friend constexpr bool operator==(const quantity& lhs, const quantity& rhs) {
-    return lhs == rhs;
+  template <typename T2>
+  [[nodiscard]] friend constexpr bool operator==(const quantity<Rep>& lhs, const quantity<T2>& rhs) {
+    return lhs.count() == rhs.count();
   }
-  [[nodiscard]] friend constexpr bool operator!=(const quantity& lhs, const quantity& rhs) {
-    return lhs != rhs;
+  template <typename T2>
+  [[nodiscard]] friend constexpr bool operator!=(const quantity<Rep>& lhs, const quantity<T2>& rhs) {
+    return !(lhs == rhs);
   }
-  [[nodiscard]] friend constexpr bool operator<(const quantity& lhs, const quantity& rhs) {
-    return lhs.value_ < rhs.value_;
+  template <typename T2>
+  [[nodiscard]] friend constexpr bool operator<(const quantity<Rep>& lhs, const quantity<T2>& rhs) {
+    return lhs.count() < rhs.count();
   }
-  [[nodiscard]] friend constexpr bool operator<=(const quantity& lhs, const quantity& rhs) {
-    return lhs.value_ <= rhs.value_;
+  template <typename T2>
+  [[nodiscard]] friend constexpr bool operator<=(const quantity<Rep>& lhs, const quantity<T2>& rhs) {
+    return lhs.count() <= rhs.count();
   }
-  [[nodiscard]] friend constexpr bool operator>(const quantity& lhs, const quantity& rhs) {
+  template <typename T2>
+  [[nodiscard]] friend constexpr bool operator>(const quantity<Rep>& lhs, const quantity<T2>& rhs) {
     return !(lhs <= rhs);
   }
-  [[nodiscard]] friend constexpr bool operator>=(const quantity& lhs, const quantity& rhs) {
+  template <typename T2>
+  [[nodiscard]] friend constexpr bool operator>=(const quantity<Rep>& lhs, const quantity<T2>& rhs) {
     return !(lhs < rhs);
   }
 };
