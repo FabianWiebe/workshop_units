@@ -26,6 +26,16 @@
 
 namespace units {
 
+template<typename T>
+inline constexpr bool treat_as_floating_point = std::is_floating_point_v<T>;
+
+template<typename Rep>
+struct quantity_values {
+  static constexpr Rep zero() { return Rep(0); }
+  static constexpr Rep max() { return std::numeric_limits<Rep>::max(); }
+  static constexpr Rep min() { return std::numeric_limits<Rep>::lowest(); }
+};
+
 template <bool B>
 using Requires = std::enable_if_t<B, bool>;
 
@@ -36,11 +46,12 @@ class quantity {
 public:
   using rep = Rep;
   constexpr quantity() : value_(0) {}
-  template<class Rep2, Requires<std::is_floating_point_v<Rep> || !std::is_floating_point_v<Rep2>> = true>
+  template<class Rep2, Requires<treat_as_floating_point<Rep> || !treat_as_floating_point<Rep2>> = true>
   constexpr quantity(const quantity<Rep2>& q)  : value_(q.count()) {};
-  constexpr explicit quantity(const Rep& v) : value_(v) {};
+  template<class Rep2, Requires<treat_as_floating_point<Rep> || !treat_as_floating_point<Rep2>> = true>
+  constexpr explicit quantity(const Rep2& v) : value_(v) {};
 
-  template<class Rep2, Requires<std::is_floating_point_v<Rep> || !std::is_floating_point_v<Rep2>> = true>
+  template<class Rep2, Requires<treat_as_floating_point<Rep> || !treat_as_floating_point<Rep2>> = true>
   constexpr quantity& operator=(const quantity<Rep2>& other) {
     if (this != &other) {
       value_ = other.value_;
@@ -53,13 +64,14 @@ public:
   };
 
   [[nodiscard]] static constexpr quantity zero() {
-    return quantity(0);
+    return quantity(quantity_values<rep>::zero());
   };
+
   [[nodiscard]] static constexpr quantity min() {
-    return quantity(std::numeric_limits<Rep>::lowest());
+    return quantity(quantity_values<rep>::min());
   };
   [[nodiscard]] static constexpr quantity max() {
-    return quantity(std::numeric_limits<Rep>::max());
+    return quantity(quantity_values<rep>::max());
   };
 
   [[nodiscard]] constexpr quantity operator+() const {
@@ -86,13 +98,13 @@ public:
     return *this;
   }
 
-  template <typename T2, Requires<!std::is_floating_point_v<T2>> = true>
+  template <typename T2, Requires<!treat_as_floating_point<T2>> = true>
   constexpr quantity& operator%=(const T2& v) {
     value_ %= v;
     return *this;
   }
 
-  template <typename T2, Requires<!std::is_floating_point_v<T2>> = true>
+  template <typename T2, Requires<!treat_as_floating_point<T2>> = true>
   constexpr quantity& operator%=(const quantity<T2>& v) {
     value_ %= v.count();
     return *this;
@@ -120,13 +132,13 @@ public:
     return *this;
   }
 
-  template <typename T2, Requires<!std::is_floating_point_v<T2>> = true>
+  template <typename T2, Requires<!treat_as_floating_point<T2>> = true>
   [[nodiscard]] friend constexpr auto operator%(const quantity<Rep>& lhs, const quantity<T2>& rhs) {
     auto result = lhs.count() % rhs.count();
     return quantity<decltype(result)>(result);
   }
 
-  template <typename Rep1, Requires<!std::is_floating_point_v<Rep1>> = true>
+  template <typename Rep1, Requires<!treat_as_floating_point<Rep1>> = true>
   [[nodiscard]] friend constexpr auto operator%(const quantity<Rep>& lhs, const Rep1& rhs) {
     auto result = lhs.count() % rhs;
     return quantity<decltype(result)>(result);
