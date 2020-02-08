@@ -26,6 +26,9 @@
 
 namespace units {
 
+template <bool B>
+using Requires = std::enable_if_t<B, bool>;
+
 template<typename Rep = double>
 class quantity {
   Rep value_;
@@ -33,10 +36,12 @@ class quantity {
 public:
   using rep = Rep;
   constexpr quantity() : value_(0) {}
-  constexpr quantity(const quantity& q) = default; // : value_(q.value_) {};
+  template<class Rep2, Requires<std::is_floating_point_v<Rep> || !std::is_floating_point_v<Rep2>> = true>
+  constexpr quantity(const quantity<Rep2>& q)  : value_(q.count()) {};
   constexpr explicit quantity(const Rep& v) : value_(v) {};
 
-  constexpr quantity& operator=(const quantity& other) {
+  template<class Rep2, Requires<std::is_floating_point_v<Rep> || !std::is_floating_point_v<Rep2>> = true>
+  constexpr quantity& operator=(const quantity<Rep2>& other) {
     if (this != &other) {
       value_ = other.value_;
     }
@@ -79,6 +84,52 @@ public:
   constexpr quantity& operator/=(const Rep& v) {
     value_ /= v;
     return *this;
+  }
+
+  template <typename T2, Requires<!std::is_floating_point_v<T2>> = true>
+  constexpr quantity& operator%=(const T2& v) {
+    value_ %= v;
+    return *this;
+  }
+
+  template <typename T2, Requires<!std::is_floating_point_v<T2>> = true>
+  constexpr quantity& operator%=(const quantity<T2>& v) {
+    value_ %= v.count();
+    return *this;
+  }
+
+  constexpr quantity operator++(int) {
+    auto cpy = *this;
+    ++value_;
+    return cpy;
+  }
+
+  constexpr quantity& operator++() {
+    ++value_;
+    return *this;
+  }
+
+  constexpr quantity operator--(int) {
+    auto cpy = *this;
+    --value_;
+    return cpy;
+  }
+
+  constexpr quantity& operator--() {
+    --value_;
+    return *this;
+  }
+
+  template <typename T2, Requires<!std::is_floating_point_v<T2>> = true>
+  [[nodiscard]] friend constexpr auto operator%(const quantity<Rep>& lhs, const quantity<T2>& rhs) {
+    auto result = lhs.count() % rhs.count();
+    return quantity<decltype(result)>(result);
+  }
+
+  template <typename Rep1, Requires<!std::is_floating_point_v<Rep1>> = true>
+  [[nodiscard]] friend constexpr auto operator%(const quantity<Rep>& lhs, const Rep1& rhs) {
+    auto result = lhs.count() % rhs;
+    return quantity<decltype(result)>(result);
   }
 
   template <typename T2>
