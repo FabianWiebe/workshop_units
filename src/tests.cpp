@@ -20,10 +20,17 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "quantity.h"
+#include "../include/quantity.h"
 
 namespace {
 
+using namespace units;
+
+constexpr quantity d1(1), d2(2);
+constexpr quantity d3 = d1 + d2;
+static_assert(d3.count() == 3);
+
   // put additional unit tests (if needed) here
+
 
 }  // namespace
