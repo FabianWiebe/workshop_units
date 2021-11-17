@@ -26,34 +26,36 @@ namespace {
 
 using namespace units;
 
+using metre = unit<std::ratio<1>>;
+
 namespace test1 {
-constexpr quantity d1(1), d2(2);
+constexpr quantity<metre> d1(1), d2(2);
 constexpr quantity d3 = d1 + d2;
 static_assert(d3.count() == 3);
 }
 
 namespace test2 {
-constexpr quantity<int> d1(1), d2(2);
-constexpr quantity<int> d3 = d1 + d2;
+constexpr quantity<metre, int> d1(1), d2(2);
+constexpr quantity<metre, int> d3 = d1 + d2;
 static_assert(d3.count() == 3);
 
-constexpr quantity<> d4(3.0);
-constexpr quantity<> d5 = d4 + d1;
+constexpr quantity<metre> d4(3.0);
+constexpr quantity<metre> d5 = d4 + d1;
 static_assert(d5.count() == 4.0);
 }
 
 
 namespace test3 {
-constexpr quantity<int> kilometre(1000);
-constexpr quantity<> d(kilometre);
+constexpr quantity<metre, int> kilometre(1000);
+constexpr quantity<metre> d(kilometre);
 static_assert(d.count() == 1000);
 
-static_assert((++quantity<int>(kilometre)).count() == 1001);
-static_assert((quantity<int>(kilometre)++).count() == 1000);
-static_assert((--quantity<int>(kilometre)).count() == 999);
-static_assert((quantity<int>(kilometre)--).count() == 1000);
+static_assert((++quantity<metre, int>(kilometre)).count() == 1001);
+static_assert((quantity<metre, int>(kilometre)++).count() == 1000);
+static_assert((--quantity<metre, int>(kilometre)).count() == 999);
+static_assert((quantity<metre, int>(kilometre)--).count() == 1000);
 
-static_assert(quantity<int>(kilometre) % 10 == quantity<int>(0));
+static_assert(quantity<metre, int>(kilometre) % 10 == quantity<metre, int>(0));
 }
 
   // put additional unit tests (if needed) here

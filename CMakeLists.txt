@@ -58,3 +58,12 @@ add_library(units
 )
 target_include_directories(units PUBLIC include)
 target_compile_features(units PUBLIC cxx_std_17)
+
+add_executable(
+    Main
+    src/main.cpp
+)
+target_link_libraries(
+    Main
+    units
+)
