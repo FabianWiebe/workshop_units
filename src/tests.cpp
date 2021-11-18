@@ -58,6 +58,12 @@ static_assert((quantity<metre, int>(kilometre)--).count() == 1000);
 static_assert(quantity<metre, int>(kilometre) % 10 == quantity<metre, int>(0));
 }
 
+namespace test6 {
+  using dm = unit<std::ratio<1, 10>>;
+  using cm = unit<std::ratio<1, 100>>;
+  static_assert(quantity_cast<quantity<cm, int>>(quantity<dm, int>(2)).count() == 20);
+}
+
   // put additional unit tests (if needed) here
 
 

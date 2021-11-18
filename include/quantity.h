@@ -22,195 +22,236 @@
 
 #pragma once
 
-#include <limits>
-
 #include "unit.h"
+#include "common_ratio.h"
+#include <limits>
+#include <type_traits>
+
+// Requires
+
+template<bool B>
+using Requires = std::enable_if_t<B, bool>;
 
 namespace units {
 
-template<typename T>
-inline constexpr bool treat_as_floating_point = std::is_floating_point_v<T>;
+  // treat_as_floating_point
 
-template<typename Rep>
-struct quantity_values {
-  static constexpr Rep zero() { return Rep(0); }
-  static constexpr Rep max() { return std::numeric_limits<Rep>::max(); }
-  static constexpr Rep min() { return std::numeric_limits<Rep>::lowest(); }
-};
+  template<class Rep>
+  inline constexpr bool treat_as_floating_point = std::is_floating_point_v<Rep>;
 
-template <bool B>
-using Requires = std::enable_if_t<B, bool>;
+  // quantity_values
 
-template<typename Unit, typename Rep = double>
-class quantity;
+  template<typename Rep>
+  struct quantity_values {
+    static constexpr Rep zero() { return Rep(0); }
+    static constexpr Rep max() { return std::numeric_limits<Rep>::max(); }
+    static constexpr Rep min() { return std::numeric_limits<Rep>::lowest(); }
+  };
 
-template<typename Unit, typename Rep = double>
-inline constexpr bool is_quantity = false;
+  // is_quantity
 
-template<typename Unit, typename Rep = double>
-inline constexpr bool is_quantity<quantity<Unit, Rep>> = true;
+  template<typename Unit, typename Rep>
+  class quantity;
 
-template<typename Unit, typename Rep>
-class quantity {
-  static_assert(std::is_same_v<Unit, units::unit<typename Unit::ratio>>);
+  template<typename T>
+  inline constexpr bool is_quantity = false;
 
-  Rep value_;
+  template<typename Rep, class Ratio>
+  inline constexpr bool is_quantity<quantity<Rep, Ratio>> = true;
 
-public:
-  using unit = Unit;
-  using rep = Rep;
-  constexpr quantity() : value_(0) {}
-  template<typename Unit1, typename Rep2, Requires<treat_as_floating_point<Rep> || !treat_as_floating_point<Rep2>> = true>
-  constexpr quantity(const quantity<Unit1, Rep2>& q)  : value_(q.count()) {};
-  template<typename Rep2, Requires<!is_quantity<Rep2> && (treat_as_floating_point<Rep> || !treat_as_floating_point<Rep2>)> = true>
-  constexpr explicit quantity(const Rep2& v) : value_(v) {};
+  template<typename Unit, typename Rep = double>
+  class quantity {
+    Rep value_{};
 
-  template<class Rep2, Requires<treat_as_floating_point<Rep> || !treat_as_floating_point<Rep2>> = true>
-  constexpr quantity& operator=(const quantity<Rep2>& other) {
-    if (this != &other) {
-      value_ = other.value_;
+  public:
+    using unit = Unit;
+    using rep = Rep;
+
+    static_assert(is_unit<Unit>, "Unit should be an instantiation of units::unit");
+    static_assert(!is_quantity<Rep>, "rep cannot be a quantity");
+
+    constexpr quantity() = default;
+    constexpr quantity(const quantity& q) = default;
+
+    template<typename Rep2,
+             Requires<!is_quantity<Rep2> &&
+                      std::is_convertible_v<Rep2, rep> &&
+                      (treat_as_floating_point<rep> || !treat_as_floating_point<Rep2>)> = true>
+    constexpr explicit quantity(const Rep2& v): value_(static_cast<rep>(v)) {}
+
+    template<typename Rep2,
+             Requires<std::is_convertible_v<Rep2, rep> &&
+                      (treat_as_floating_point<rep> || !treat_as_floating_point<Rep2>)> = true>
+    constexpr quantity(const quantity<Unit, Rep2>& q) : value_{static_cast<rep>(q.count())} {}
+
+    constexpr quantity& operator=(const quantity& other) = default;
+
+    [[nodiscard]] constexpr Rep count() const noexcept { return value_; }
+
+    [[nodiscard]] static constexpr quantity zero() { return quantity(quantity_values<Rep>::zero()); }
+    [[nodiscard]] static constexpr quantity min() { return quantity(quantity_values<Rep>::min()); }
+    [[nodiscard]] static constexpr quantity max() { return quantity(quantity_values<Rep>::max()); }
+
+    [[nodiscard]] constexpr quantity operator+() const { return *this; }
+    [[nodiscard]] constexpr quantity operator-() const { return quantity(-count()); }
+
+    constexpr quantity& operator++()
+    {
+      ++value_;
+      return *this;
     }
-    return *this;
+
+    [[nodiscard]] constexpr quantity operator++(int) { return quantity(value_++); }
+
+    constexpr quantity& operator--()
+    {
+      --value_;
+      return *this;
+    }
+
+    [[nodiscard]] constexpr quantity operator--(int) { return quantity(value_--); }
+
+    constexpr quantity& operator+=(const quantity& q)
+    {
+      value_ += q.count();
+      return *this;
+    }
+    constexpr quantity& operator-=(const quantity& q)
+    {
+      value_ -= q.count();
+      return *this;
+    }
+    constexpr quantity& operator*=(const Rep& v)
+    {
+      value_ *= v;
+      return *this;
+    }
+    constexpr quantity& operator/=(const Rep& v)
+    {
+      value_ /= v;
+      return *this;
+    }
+    template<typename T = Rep,
+             Requires<!treat_as_floating_point<T>> = true>
+    constexpr quantity& operator%=(const quantity& q)
+    {
+      value_ %= q.count();
+      return *this;
+    }
+    template<typename T = Rep,
+             Requires<!treat_as_floating_point<T>> = true>
+    constexpr quantity& operator%=(const Rep& v)
+    {
+      value_ %= v;
+      return *this;
+    }
+
+    template<typename Rep2>
+    [[nodiscard]] friend constexpr auto operator+(const quantity& lhs, const quantity<Unit, Rep2>& rhs)
+        -> quantity<Unit, decltype(std::declval<Rep>() + std::declval<Rep2>())>
+    {
+      using ret = quantity<Unit, decltype(lhs.count() + rhs.count())>;
+      return ret(lhs.count() + rhs.count());
+    }
+
+    template<typename Rep2>
+    [[nodiscard]] friend constexpr auto operator-(const quantity& lhs, const quantity<Unit, Rep2>& rhs)
+        -> quantity<Unit, decltype(std::declval<Rep>() - std::declval<Rep2>())>
+    {
+      using ret = quantity<Unit, decltype(lhs.count() - rhs.count())>;
+      return ret(lhs.count() - rhs.count());
+    }
+
+    template<typename Rep2,
+             Requires<!is_quantity<Rep2>> = true>
+    [[nodiscard]] friend constexpr auto operator*(const quantity& q, const Rep2& v)
+        -> quantity<Unit, decltype(std::declval<Rep>() * std::declval<Rep2>())>
+    {
+      using ret = quantity<Unit, decltype(q.count() * v)>;
+      return ret(q.count() * v);
+    }
+
+    template<typename Rep2,
+             Requires<!is_quantity<Rep2>> = true>
+    [[nodiscard]] friend constexpr auto operator*(const Rep2& v, const quantity& q) -> decltype(q * v)
+    {
+      return q * v;
+    }
+
+    template<typename Rep2,
+             Requires<!is_quantity<Rep2>> = true>
+    [[nodiscard]] friend constexpr auto operator/(const quantity& q, const Rep2& v)
+        -> quantity<Unit, decltype(std::declval<Rep>() / std::declval<Rep2>())>
+    {
+      using ret = quantity<Unit, decltype(q.count() / v)>;
+      return ret(q.count() / v);
+    }
+
+    template<typename Rep2>
+    [[nodiscard]] friend constexpr auto operator/(const quantity& lhs, const quantity<Unit, Rep2>& rhs)
+        -> decltype(std::declval<Rep>() / std::declval<Rep2>())
+    {
+      return lhs.count() / rhs.count();
+    }
+
+    template<typename Rep2, typename T = Rep,
+             Requires<!is_quantity<Rep2> &&
+                      !treat_as_floating_point<T> &&
+                      !treat_as_floating_point<Rep2>> = true>
+    [[nodiscard]] friend constexpr quantity operator%(const quantity& q, const Rep2& v)
+    {
+      return quantity(q.count() % v);
+    }
+
+    template<typename Rep2, typename T = Rep,
+             Requires<!treat_as_floating_point<T> &&
+                      !treat_as_floating_point<Rep2>> = true>
+    [[nodiscard]] friend constexpr quantity operator%(const quantity& lhs, const quantity<Unit, Rep2>& rhs)
+    {
+      return quantity(lhs.count() % rhs.count());
+    }
+
+    template<typename Rep2>
+    [[nodiscard]] friend constexpr bool operator==(const quantity& lhs, const quantity<Unit, Rep2>& rhs)
+    {
+      return lhs.count() == rhs.count();
+    }
+
+    template<typename Rep2>
+    [[nodiscard]] friend constexpr bool operator!=(const quantity& lhs, const quantity<Unit, Rep2>& rhs)
+    {
+      return !(lhs == rhs);
+    }
+
+    template<typename Rep2>
+    [[nodiscard]] friend constexpr bool operator<(const quantity& lhs, const quantity<Unit, Rep2>& rhs)
+    {
+      return lhs.count() < rhs.count();
+    }
+
+    template<typename Rep2>
+    [[nodiscard]] friend constexpr bool operator<=(const quantity& lhs, const quantity<Unit, Rep2>& rhs)
+    {
+      return !(rhs < lhs);
+    }
+
+    template<typename Rep2>
+    [[nodiscard]] friend constexpr bool operator>(const quantity& lhs, const quantity<Unit, Rep2>& rhs)
+    {
+      return rhs < lhs;
+    }
+
+    template<typename Rep2>
+    [[nodiscard]] friend constexpr bool operator>=(const quantity& lhs, const quantity<Unit, Rep2>& rhs)
+    {
+      return !(lhs < rhs);
+    }
   };
 
-  [[nodiscard]] constexpr Rep count() const noexcept {
-    return value_;
+  template<typename To, typename Unit, typename Rep, Requires<is_quantity<To>> = true>
+  [[nodiscard]] constexpr To quantity_cast(const quantity<Unit, Rep>& q)
+  {
+    return To(static_cast<typename To::rep>(q.count() * Unit::ratio::num / To::unit::ratio::num * To::unit::ratio::den / Unit::ratio::den));
   };
-
-  [[nodiscard]] static constexpr quantity zero() {
-    return quantity(quantity_values<rep>::zero());
-  };
-
-  [[nodiscard]] static constexpr quantity min() {
-    return quantity(quantity_values<rep>::min());
-  };
-  [[nodiscard]] static constexpr quantity max() {
-    return quantity(quantity_values<rep>::max());
-  };
-
-  [[nodiscard]] constexpr quantity operator+() const {
-    return *this;
-  }
-  [[nodiscard]] constexpr quantity operator-() const {
-    return quantity(-value_);
-  }
-
-  constexpr quantity& operator+=(const quantity& q) {
-    value_ += q.value_;
-    return *this;
-  }
-  constexpr quantity& operator-=(const quantity& q) {
-    value_ -= q.value_;
-    return *this;
-  }
-  constexpr quantity& operator*=(const Rep& v) {
-    value_ *= v;
-    return *this;
-  }
-  constexpr quantity& operator/=(const Rep& v) {
-    value_ /= v;
-    return *this;
-  }
-
-  template <typename T2, Requires<!treat_as_floating_point<T2>> = true>
-  constexpr quantity& operator%=(const T2& v) {
-    value_ %= v;
-    return *this;
-  }
-
-  template <typename Unit2, typename T2, Requires<!treat_as_floating_point<T2> && std::is_same_v<Unit, Unit2>> = true>
-  constexpr quantity& operator%=(const quantity<Unit2, T2>& v) {
-    value_ %= v.count();
-    return *this;
-  }
-
-  constexpr quantity operator++(int) {
-    auto cpy = *this;
-    ++value_;
-    return cpy;
-  }
-
-  constexpr quantity& operator++() {
-    ++value_;
-    return *this;
-  }
-
-  constexpr quantity operator--(int) {
-    auto cpy = *this;
-    --value_;
-    return cpy;
-  }
-
-  constexpr quantity& operator--() {
-    --value_;
-    return *this;
-  }
-
-  template <typename Unit2, typename Rep2, Requires<!treat_as_floating_point<Rep2> && std::is_same_v<Unit, Unit2>> = true>
-  [[nodiscard]] friend constexpr auto operator%(const quantity& lhs, const quantity<Unit2, Rep2>& rhs) {
-    auto result = lhs.count() % rhs.count();
-    return quantity<Unit, decltype(result)>(result);
-  }
-
-  template <typename Rep1, Requires<!is_quantity<Rep1> && !treat_as_floating_point<Rep1>> = true>
-  [[nodiscard]] friend constexpr auto operator%(const quantity& lhs, const Rep1& rhs) {
-    auto result = lhs.count() % rhs;
-    return quantity<Unit, decltype(result)>(result);
-  }
-
-  template <typename Unit2, typename T2, Requires<std::is_same_v<Unit, Unit2>> = true>
-  [[nodiscard]] friend constexpr auto operator+(const quantity& lhs, const quantity<Unit2, T2>& rhs) {
-    auto result = lhs.count() + rhs.count();
-    return quantity<Unit, decltype(result)>(result);
-  }
-  template <typename Unit2, typename T2, Requires<std::is_same_v<Unit, Unit2>> = true>
-  [[nodiscard]] friend constexpr auto operator-(const quantity& lhs, const quantity<Unit2, T2>& rhs) {
-    auto result = lhs.count() - rhs.count();
-    return quantity<Unit, decltype(result)>(result);
-  }
-  template <typename Rep1>
-  [[nodiscard]] friend constexpr auto operator*(const quantity& q, const Rep1& v) {
-    auto result = q.count() * v;
-    return quantity<Unit, decltype(result)>(result);
-  }
-  template <typename Rep1>
-  [[nodiscard]] friend constexpr auto operator*(const Rep1& v, const quantity& q) {
-    return  q * v;
-  }
-  template <typename Rep1>
-  [[nodiscard]] friend constexpr auto operator/(const quantity& q, const Rep1& v) {
-    auto result = q.count() / v;
-    return quantity<Unit, decltype(result)>(result);
-  }
-  template <typename Unit2, typename T2, Requires<std::is_same_v<Unit, Unit2>> = true>
-  [[nodiscard]] friend constexpr auto operator/(const quantity& lhs, const quantity<Unit2, T2>& rhs) {
-    return lhs.count() / rhs.count();
-  }
-  template <typename Unit2, typename T2, Requires<std::is_same_v<Unit, Unit2>> = true>
-  [[nodiscard]] friend constexpr bool operator==(const quantity& lhs, const quantity<Unit2, T2>& rhs) {
-
-    return lhs.count() == rhs.count();
-  }
-  template <typename Unit2, typename T2, Requires<std::is_same_v<Unit, Unit2>> = true>
-  [[nodiscard]] friend constexpr bool operator!=(const quantity& lhs, const quantity<Unit2, T2>& rhs) {
-    return !(lhs == rhs);
-  }
-  template <typename Unit2, typename T2, Requires<std::is_same_v<Unit, Unit2>> = true>
-  [[nodiscard]] friend constexpr bool operator<(const quantity& lhs, const quantity<Unit2, T2>& rhs) {
-    return lhs.count() < rhs.count();
-  }
-  template <typename Unit2, typename T2, Requires<std::is_same_v<Unit, Unit2>> = true>
-  [[nodiscard]] friend constexpr bool operator<=(const quantity& lhs, const quantity<Unit2, T2>& rhs) {
-    return lhs.count() <= rhs.count();
-  }
-  template <typename Unit2, typename T2, Requires<std::is_same_v<Unit, Unit2>> = true>
-  [[nodiscard]] friend constexpr bool operator>(const quantity& lhs, const quantity<Unit2, T2>& rhs) {
-    return !(lhs <= rhs);
-  }
-  template <typename Unit2, typename T2, Requires<std::is_same_v<Unit, Unit2>> = true>
-  [[nodiscard]] friend constexpr bool operator>=(const quantity& lhs, const quantity<Unit2, T2>& rhs) {
-    return !(lhs < rhs);
-  }
-};
 
 }  // namespace units
