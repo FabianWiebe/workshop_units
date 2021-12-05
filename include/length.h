@@ -5,5 +5,33 @@
 namespace units {
 
   // put length definitions and its units here
+  using metre = unit<std::ratio<1>>;
+  using millimetre = unit<std::milli>;
+  using kilometre = unit<std::kilo>;
+
+
+namespace literals {
+  constexpr auto operator ""_m(unsigned long long l) {
+    return quantity<metre, unsigned long long>(l);
+  }
+  constexpr auto operator ""_m(long double l) {
+    return quantity<metre, long double>(l);
+  }
+  constexpr auto operator ""_mm(unsigned long long l) {
+    return quantity<millimetre, unsigned long long>(l);
+  }
+  constexpr auto operator ""_mm(long double l) {
+    return quantity<millimetre, long double>(l);
+  }
+  constexpr auto operator ""_km(unsigned long long l) {
+    return quantity<kilometre, unsigned long long>(l);
+  }
+  constexpr auto operator ""_km(long double l) {
+    return quantity<kilometre, long double>(l);
+  }
+
+
+
+}
 
 }  // namespace units
