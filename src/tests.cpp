@@ -21,6 +21,7 @@
 // SOFTWARE.
 
 #include "../include/quantity.h"
+#include "../include/type_list.h"
 
 namespace {
 
@@ -58,10 +59,20 @@ static_assert((quantity<metre, int>(kilometre)--).count() == 1000);
 static_assert(quantity<metre, int>(kilometre) % 10 == quantity<metre, int>(0));
 }
 
-namespace test6 {
-  using dm = unit<std::ratio<1, 10>>;
-  using cm = unit<std::ratio<1, 100>>;
+namespace test6
+{
+  using dm = unit<std::deci>;
+  using cm = unit<std::centi>;
   static_assert(quantity_cast<quantity<cm, int>>(quantity<dm, int>(2)).count() == 20);
+}
+
+namespace test9 {
+  template<typename... Types>
+  struct type_list;
+
+  using split = type_list_split<type_list<int, long, double, float, size_t>, 2>;
+  static_assert(std::is_same_v<split::first_list, type_list<int, long>>);
+  static_assert(std::is_same_v<split::second_list, type_list<double, float, size_t>>);
 }
 
   // put additional unit tests (if needed) here
