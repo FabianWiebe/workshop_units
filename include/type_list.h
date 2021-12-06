@@ -97,12 +97,37 @@ namespace detail {
         Pred<Lhs1, Rhs1>::value,
         type_list_push_front<typename type_list_merge_sorted_impl<List<LhsRest...>, List<Rhs1, RhsRest...>, Pred>::type, Lhs1>,
         type_list_push_front<typename type_list_merge_sorted_impl<List<Lhs1, LhsRest...>, List<RhsRest...>, Pred>::type, Rhs1>>;
-  };  
+  };
 }
 
 template<typename SortedList1, typename SortedList2, template<typename, typename> typename Pred>
 using type_list_merge_sorted = typename detail::type_list_merge_sorted_impl<SortedList1, SortedList2, Pred>::type;
 
+namespace detail {
 
+  template<typename List, template<typename, typename> typename Pred>
+  struct type_list_sort_impl;
+
+  template<template<typename...> typename List, template<typename, typename> typename Pred>
+  struct type_list_sort_impl<List<>, Pred> {
+    using type = List<>;
+  };
+
+  template<template<typename...> typename List, typename Type, template<typename, typename> typename Pred>
+  struct type_list_sort_impl<List<Type>, Pred> {
+    using type = List<Type>;
+  };
+
+  template<template<typename...> typename List, typename... Types, template<typename, typename> typename Pred>
+  struct type_list_sort_impl<List<Types...>, Pred> {
+    using type = type_list_merge_sorted<
+        typename type_list_sort_impl<typename type_list_split_half<List<Types...>>::first_list, Pred>::type,
+        typename type_list_sort_impl<typename type_list_split_half<List<Types...>>::second_list, Pred>::type,
+        Pred>;
+  };
+}
+
+template<typename List, template<typename, typename> typename Pred>
+using type_list_sort = typename detail::type_list_sort_impl<List, Pred>::type;
 
 }  // namespace units
