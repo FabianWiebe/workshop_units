@@ -22,12 +22,11 @@
 
 #include "../include/quantity.h"
 #include "../include/type_list.h"
+#include "../include/length.h"
 
 namespace {
 
 using namespace units;
-
-using metre = unit<std::ratio<1>>;
 
 namespace test1 {
 constexpr quantity<metre> d1(1), d2(2);
@@ -61,8 +60,8 @@ static_assert(quantity<metre, int>(kilometre) % 10 == quantity<metre, int>(0));
 
 namespace test6
 {
-  using dm = unit<std::deci>;
-  using cm = unit<std::centi>;
+  using dm = unit<dimension_length, std::deci>;
+  using cm = unit<dimension_length, std::centi>;
   static_assert(quantity_cast<quantity<cm, int>>(quantity<dm, int>(2)).count() == 20);
 }
 

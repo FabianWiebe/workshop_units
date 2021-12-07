@@ -1,13 +1,16 @@
 #pragma once
 
+#include "base_dimensions.h"
 #include "quantity.h"
 
 namespace units {
 
   // put length definitions and its units here
-  using metre = unit<std::ratio<1>>;
-  using millimetre = unit<std::milli>;
-  using kilometre = unit<std::kilo>;
+  using dimension_length = make_dimension<base_dim_length>;
+  using metre = unit<dimension_length, std::ratio<1>>;
+  using meter = metre;
+  using millimetre = unit<dimension_length, std::milli>;
+  using kilometre = unit<dimension_length, std::kilo>;
 
 
 namespace literals {
@@ -29,9 +32,6 @@ namespace literals {
   constexpr auto operator ""_km(long double l) {
     return quantity<kilometre, long double>(l);
   }
-
-
-
 }
 
 }  // namespace units

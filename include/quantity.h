@@ -114,8 +114,14 @@ namespace units {
 
   // quantity
 
-  template<typename Q1, typename Q2, typename Rep = std::common_type_t<typename Q1::rep, typename Q2::rep>>
-  using common_quantity = quantity<unit<common_ratio<typename Q1::unit::ratio, typename Q2::unit::ratio>>, Rep>;
+  template<typename Q1, typename Q2>
+  inline constexpr bool same_dim = false;
+
+  template<typename D, typename R1, typename R2>
+  inline constexpr bool same_dim<unit<D, R1>, unit<D, R2>> = true;
+
+  template<typename Q1, typename Q2, typename Rep = std::common_type_t<typename Q1::rep, typename Q2::rep>, Requires<same_dim<typename Q1::unit, typename Q2::unit>> = true>
+  using common_quantity = quantity<unit<typename Q1::unit::dimension, common_ratio<typename Q1::unit::ratio, typename Q2::unit::ratio>>, Rep>;
 
   template<typename Unit, typename Rep = double>
   class quantity {
@@ -141,7 +147,8 @@ namespace units {
     template<typename Unit2, typename Rep2,
              Requires<std::is_convertible_v<Rep2, rep> &&
                         (treat_as_floating_point<rep> ||
-                       (!treat_as_floating_point<Rep2> && std::ratio_divide<typename Unit2::ratio, typename Unit::ratio>::den == 1))
+                       (!treat_as_floating_point<Rep2> && std::ratio_divide<typename Unit2::ratio, typename Unit::ratio>::den == 1)) &&
+                      same_dim<unit, Unit2>
                       > = true>
     constexpr quantity(const quantity<Unit2, Rep2>& q) : value_{quantity_cast<quantity>(q).count()} {}
 
@@ -207,7 +214,7 @@ namespace units {
       return *this;
     }
 
-    template<typename Unit2, typename Rep2>
+    template<typename Unit2, typename Rep2, Requires<same_dim<unit, Unit2>> = true>
     [[nodiscard]] friend constexpr auto operator+(const quantity& lhs, const quantity<Unit2, Rep2>& rhs)
         -> common_quantity<quantity, quantity<Unit2, Rep2>, decltype(std::declval<Rep>() + std::declval<Rep2>())>
     {
@@ -215,7 +222,7 @@ namespace units {
       return ret(quantity_cast<ret>(lhs).count() + quantity_cast<ret>(rhs).count());
     }
 
-    template<typename Unit2, typename Rep2>
+    template<typename Unit2, typename Rep2, Requires<same_dim<unit, Unit2>> = true>
     [[nodiscard]] friend constexpr auto operator-(const quantity& lhs, const quantity<Unit2, Rep2>& rhs)
         -> common_quantity<quantity, quantity<Unit2, Rep2>, decltype(std::declval<Rep>() - std::declval<Rep2>())>
     {
@@ -239,7 +246,7 @@ namespace units {
       return q * v;
     }
 
-    template<typename Unit2, typename Rep2>
+    template<typename Unit2, typename Rep2, Requires<same_dim<unit, Unit2>> = true>
     [[nodiscard]] friend constexpr auto operator*(const quantity& lhs, const quantity<Unit2, Rep2>& rhs)
         -> common_quantity<quantity, quantity<Unit2, Rep2>, decltype(std::declval<Rep>() * std::declval<Rep2>())>
     {
@@ -256,7 +263,7 @@ namespace units {
       return ret(q.count() / v);
     }
 
-    template<typename Unit2, typename Rep2>
+    template<typename Unit2, typename Rep2, Requires<same_dim<unit, Unit2>> = true>
     [[nodiscard]] friend constexpr auto operator/(const quantity& lhs, const quantity<Unit2, Rep2>& rhs)
         -> decltype(std::declval<Rep>() / std::declval<Rep2>())
     {
@@ -275,7 +282,8 @@ namespace units {
 
     template<typename Unit2, typename Rep2, typename T = Rep,
              Requires<!treat_as_floating_point<T> &&
-                      !treat_as_floating_point<Rep2>> = true>
+                      !treat_as_floating_point<Rep2> &&
+                      same_dim<unit, Unit2>> = true>
     [[nodiscard]] friend constexpr auto operator%(const quantity& lhs, const quantity<Unit2, Rep2>& rhs)
     -> common_quantity<quantity, quantity<Unit2, Rep2>, decltype(std::declval<Rep>() % std::declval<Rep2>())>
     {
@@ -283,39 +291,39 @@ namespace units {
       return ret(ret(lhs).count() % ret(rhs).count());
     }
 
-    template<typename Unit2, typename Rep2>
+    template<typename Unit2, typename Rep2, Requires<same_dim<unit, Unit2>> = true>
     [[nodiscard]] friend constexpr bool operator==(const quantity& lhs, const quantity<Unit2, Rep2>& rhs)
     {
       using cq = common_quantity<quantity, quantity<Unit2, Rep2>>;
       return cq(lhs).count() == cq(rhs).count();
     }
 
-    template<typename Unit2, typename Rep2>
+    template<typename Unit2, typename Rep2, Requires<same_dim<unit, Unit2>> = true>
     [[nodiscard]] friend constexpr bool operator!=(const quantity& lhs, const quantity<Unit2, Rep2>& rhs)
     {
       return !(lhs == rhs);
     }
 
-    template<typename Unit2, typename Rep2>
+    template<typename Unit2, typename Rep2, Requires<same_dim<unit, Unit2>> = true>
     [[nodiscard]] friend constexpr bool operator<(const quantity& lhs, const quantity<Unit2, Rep2>& rhs)
     {
       using cq = common_quantity<quantity, quantity<Unit2, Rep2>>;
       return cq(lhs).count() < cq(rhs).count();
     }
 
-    template<typename Unit2, typename Rep2>
+    template<typename Unit2, typename Rep2, Requires<same_dim<unit, Unit2>> = true>
     [[nodiscard]] friend constexpr bool operator<=(const quantity& lhs, const quantity<Unit2, Rep2>& rhs)
     {
       return !(rhs < lhs);
     }
 
-    template<typename Unit2, typename Rep2>
+    template<typename Unit2, typename Rep2, Requires<same_dim<unit, Unit2>> = true>
     [[nodiscard]] friend constexpr bool operator>(const quantity& lhs, const quantity<Unit2, Rep2>& rhs)
     {
       return rhs < lhs;
     }
 
-    template<typename Unit2, typename Rep2>
+    template<typename Unit2, typename Rep2, Requires<same_dim<unit, Unit2>> = true>
     [[nodiscard]] friend constexpr bool operator>=(const quantity& lhs, const quantity<Unit2, Rep2>& rhs)
     {
       return !(lhs < rhs);

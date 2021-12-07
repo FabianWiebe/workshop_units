@@ -11,6 +11,16 @@ namespace units {
   template<typename... Exponents>
   struct dimension;
 
+  // is_dimension
+
+  template<typename T>
+  inline constexpr bool is_dimension = false;
+
+  template<typename... Exponents>
+  inline constexpr bool is_dimension<units::dimension<Exponents...>> = true;
+
+  // make dimension
+
   template<typename BaseDimension, int Value>
   struct exp {
     using dimension = BaseDimension;

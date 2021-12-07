@@ -58,7 +58,7 @@ add_library(units
     include/dimension.h
     include/length.h
     include/quantity.h
-    include/time.h
+    include/my_time.h
     include/type_list.h
     include/unit.h
 )
