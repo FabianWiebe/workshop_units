@@ -35,4 +35,36 @@ namespace units {
   template <typename Exp>
   using exp_invert = typename details::exp_invert_impl<Exp>::type;
 
+
+  namespace detail {
+
+    template<typename D>
+    struct dim_consolidate;
+
+    template<>
+    struct dim_consolidate<dimension<>> {
+      using type = dimension<>;
+    };
+
+    template<template<typename... > typename D, typename First>
+    struct dim_consolidate<D<First>> {
+      using type = std::conditional_t<First::value == 0, D<>, D<First>>;
+    };
+
+    template<template<typename... > typename D, typename First, typename Second, typename ...Rest>
+    struct dim_consolidate<D<First, Second, Rest...>> {
+      using type = std::conditional_t<
+          First::value == 0,
+          typename dim_consolidate<D<Second, Rest...>>::type,
+          std::conditional_t<
+              typename First::dimension() == typename Second::dimension(),
+              typename dim_consolidate<D<exp<typename First::dimension, First::value + Second::value>, Rest...>>::type,
+              type_list_push_front<typename dim_consolidate<D<Second, Rest...>>::type, First>>>;
+    };
+
+  }  // namespace detail
+
+  template<typename... Es>
+  using make_dimension = typename detail::dim_consolidate<type_list_sort<dimension<Es...>, exp_less>>::type;
+
 }  // namespace units
