@@ -34,4 +34,6 @@ namespace literals {
   }
 }
 
+using namespace literals;
+
 }  // namespace units

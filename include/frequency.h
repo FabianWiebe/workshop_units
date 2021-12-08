@@ -9,7 +9,8 @@
 namespace units {
 
   // put frequency related definitions here
-  using dimension_frequency = make_dimension<exp<base_dim_time, -1>>;
+  using dimension_frequency = dim_invert<dimension_time>;
+  static_assert(same_dim<dimension_frequency, make_dimension<exp<base_dim_time, -1>>>);
 
   using hertz = unit<dimension_frequency, std::ratio<1>>;
   using kilohertz = unit<dimension_frequency, std::kilo>;

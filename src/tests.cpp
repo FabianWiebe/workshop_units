@@ -23,6 +23,8 @@
 #include "../include/quantity.h"
 #include "../include/type_list.h"
 #include "../include/length.h"
+#include "../include/time.h"
+#include "../include/velocity.h"
 
 namespace {
 
@@ -72,6 +74,11 @@ namespace test9 {
   using split = type_list_split<type_list<int, long, double, float, size_t>, 2>;
   static_assert(std::is_same_v<split::first_list, type_list<int, long>>);
   static_assert(std::is_same_v<split::second_list, type_list<double, float, size_t>>);
+}
+
+namespace test17 {
+  static_assert(2_km / 2_kmph == 1_h);
+  static_assert(20_km / 2_kmph / 10 == 60_min);
 }
 
   // put additional unit tests (if needed) here

@@ -49,6 +49,16 @@ namespace units {
     static_assert(ratio::num * ratio::den > 0, "ratio must be positive");
   };
 
+
+
+  template<typename unit1, typename unit2>
+  using unit_multiply = unit<dimension_multiply<typename unit1::dimension, typename unit2::dimension>,
+                        std::ratio_multiply<typename unit1::ratio, typename unit2::ratio>>;
+
+  template<typename unit1, typename unit2>
+  using unit_divide = unit<dimension_divide<typename unit1::dimension, typename unit2::dimension>,
+                      std::ratio_divide<typename unit1::ratio, typename unit2::ratio>>;
+
   // is_unit
 
   template<typename T>

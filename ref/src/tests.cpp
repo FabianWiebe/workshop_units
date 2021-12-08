@@ -349,7 +349,7 @@ namespace {
   // exp_less
 
   template<int Id, int Value>
-  using e = exp<dim_id<Id>, Value>;
+  using e = units::exp<dim_id<Id>, Value>;
 
   template<typename TypeList>
   using exp_sort = type_list_sort<TypeList, exp_less>;

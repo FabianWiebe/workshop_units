@@ -22,6 +22,8 @@ namespace units {
     constexpr auto operator""_ms(long double l) { return quantity<milisecond, long double>(l); }
     constexpr auto operator""_s(unsigned long long l) { return quantity<second, unsigned long long>(l); }
     constexpr auto operator""_s(long double l) { return quantity<second, long double>(l); }
+    constexpr auto operator""_min(unsigned long long l) { return quantity<minute, unsigned long long>(l); }
+    constexpr auto operator""_min(long double l) { return quantity<minute, long double>(l); }
     constexpr auto operator""_h(unsigned long long l) { return quantity<hour, unsigned long long>(l); }
     constexpr auto operator""_h(long double l) { return quantity<hour, long double>(l); }
   }
