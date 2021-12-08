@@ -90,4 +90,22 @@ namespace units {
   template<typename... Es>
   using make_dimension = typename detail::dim_consolidate<type_list_sort<dimension<Es...>, exp_less>>::type;
 
+  namespace detail
+  {
+    template<typename D1, typename D2>
+    struct dimension_multiply_impl;
+
+    template<template<typename...> typename List, typename... Left, typename... Right>
+    struct dimension_multiply_impl<List<Left...>, List<Right...>>
+    {
+      using type = make_dimension<Left..., Right...>;
+    };
+  }
+
+  template<typename D1, typename D2>
+  using dimension_multiply = typename detail::dimension_multiply_impl<D1, D2>::type;
+
+  template<typename D1, typename D2>
+  using dimension_divide = typename detail::dimension_multiply_impl<D1, dim_invert<D2>>::type;
+
 }  // namespace units
