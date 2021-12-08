@@ -10,7 +10,7 @@
 namespace units {
 
   // put time related definitions here
-  using dimension_time = make_dimension<base_dim_time>;
+  using dimension_time = make_dimension<exp<base_dim_time, 1>>;
   using milisecond = unit<dimension_time, std::chrono::milliseconds::period>;
   using second = unit<dimension_time, std::chrono::seconds::period>;
   using minute = unit<dimension_time, std::chrono::minutes::period>;

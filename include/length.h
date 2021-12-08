@@ -6,7 +6,7 @@
 namespace units {
 
   // put length definitions and its units here
-  using dimension_length = make_dimension<base_dim_length>;
+  using dimension_length = make_dimension<exp<base_dim_length, 1>>;
   using metre = unit<dimension_length, std::ratio<1>>;
   using meter = metre;
   using millimetre = unit<dimension_length, std::milli>;

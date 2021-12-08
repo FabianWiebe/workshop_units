@@ -45,6 +45,19 @@ namespace units {
   template <typename Exp>
   using exp_invert = typename details::exp_invert_impl<Exp>::type;
 
+  namespace details {
+    template <typename E>
+    struct dim_invert_impl;
+
+    template <typename ...Es>
+    struct dim_invert_impl<dimension<Es...>>
+    {
+      using type = dimension<exp_invert<Es>...>;
+    };
+  }
+
+  template <typename D>
+  using dim_invert = typename details::dim_invert_impl<D>::type;
 
   namespace detail {
 
